@@ -555,9 +555,51 @@
         .logo-placeholder img{width:100%;height:100%;object-fit:contain;border-radius:50%}
         .extra-panel[hidden], .editor-grid[hidden]{display:none!important}
         @media(max-width:700px){.controls-panel{padding:18px}.history-item{align-items:flex-start}}
-        </style>
+    
+        /* Pantalla de bienvenida y acceso */
+        .app-overlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(145deg,#420000,#8b0000 55%,#310000);display:flex;align-items:center;justify-content:center;padding:20px;color:white}
+        .app-overlay[hidden]{display:none!important}
+        .app-welcome{text-align:center;width:min(100%,430px);animation:appear .35s ease}
+        .app-monogram{width:90px;height:90px;border:2px solid #e7c27d;border-radius:24px;display:grid;place-items:center;margin:0 auto 22px;font-size:34px;font-weight:800;color:#e7c27d;box-shadow:0 12px 32px #0004}
+        .app-welcome h1{font-size:25px;letter-spacing:1px;margin-bottom:12px}
+        .app-welcome p{line-height:1.6;color:#f4e8e8}
+        .app-footer{margin-top:25px;font-size:12px;color:#ecd6d6;line-height:1.8}
+        .app-spinner{width:35px;height:35px;border:3px solid #ffffff44;border-top-color:#e7c27d;border-radius:50%;animation:spin .8s linear infinite;margin:26px auto 0}
+        .login-card{background:white;color:#442222;border-radius:22px;padding:28px;box-shadow:0 20px 55px #0005;width:min(100%,410px);animation:appear .3s ease}
+        .login-card h2{color:#8b0000;margin:0 0 8px}.login-card p{font-size:13px;color:#745858;margin-bottom:20px}
+        .login-card label{display:block;font-size:13px;font-weight:650;margin:13px 0 5px}
+        .login-card input{width:100%;padding:13px;border:1px solid #e2caca;border-radius:12px;font-size:15px}
+        .login-card button{width:100%;margin-top:20px}
+        .login-error{color:#ad2020;font-size:13px;min-height:20px;margin-top:10px}
+        @keyframes spin{to{transform:rotate(360deg)}}@keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @media print{.app-overlay{display:none!important}}
+    </style>
 </head>
 <body>
+    <div id="pantallaBienvenida" class="app-overlay" role="status" aria-live="polite">
+        <div class="app-welcome">
+            <div class="app-monogram">OS</div>
+            <h1>OSMAR SPORT</h1>
+            <p>App hecho exclusivo por <strong>OSMAR SPORT</strong></p>
+            <div class="app-spinner" aria-label="Cargando"></div>
+            <div class="app-footer">Copyright © · Todos los derechos reservados<br>WhatsApp: 0976 421811</div>
+        </div>
+    </div>
+    <div id="pantallaLogin" class="app-overlay" hidden>
+        <form class="login-card" id="formAcceso" autocomplete="on">
+            <div style="text-align:center;font-size:30px;color:#8b0000;margin-bottom:12px"><i class="fas fa-lock"></i></div>
+            <h2 style="text-align:center">Bienvenido</h2>
+            <p style="text-align:center">Acceso al generador de presupuestos · OSMAR SPORT</p>
+            <label for="usuarioAcceso">Usuario</label>
+            <input id="usuarioAcceso" type="text" autocomplete="username" required placeholder="Usuario">
+            <label for="claveAcceso">Contraseña</label>
+            <input id="claveAcceso" type="password" autocomplete="current-password" required placeholder="Contraseña">
+            <div class="login-error" id="errorAcceso" aria-live="polite"></div>
+            <button type="submit" class="btn btn-primary">Ingresar <i class="fas fa-arrow-right"></i></button>
+            <div style="text-align:center;font-size:12px;color:#967777;margin-top:18px">OSMAR SPORT · WhatsApp 0976 421811</div>
+        </form>
+    </div>
+
 
     <!-- Panel de controles (edición + botón de imprimir) -->
     <div class="controls-panel no-print" id="controlsPanel">
@@ -724,7 +766,7 @@
 
             function crearDetalleEditor(datos = {}) {
                 const id = 'detalle_' + (detalleIdCounter++);
-                const desc = datos.descripcion !== undefined ? datos.descripcion : '60 unidades tela para silla cretona plus pilar con serigrafia en el respaldero';
+                const desc = datos.descripcion !== undefined ? datos.descripcion : 'tela para silla cretona plus pilar con serigrafia en el respaldero';
                 const unidades = datos.unidades !== undefined ? datos.unidades : 60;
                 const precio = datos.precio !== undefined ? datos.precio : 90000;
 
@@ -865,7 +907,7 @@
                 setInterval(actualizarFechaHora, 60000);
 
                 const primerDetalle = crearDetalleEditor({
-                    descripcion: '60 unidades tela para silla cretona plus pilar con serigrafia en el respaldero',
+                    descripcion: 'tela para silla cretona plus pilar con serigrafia en el respaldero',
                     unidades: 60,
                     precio: 90000
                 });
@@ -895,6 +937,36 @@
 
             inicializar();
         })();
+    </script>
+
+    <script>
+    (function(){
+        const splash=document.getElementById('pantallaBienvenida');
+        const login=document.getElementById('pantallaLogin');
+        const key='osmarSportPresupuestosAccesoV1';
+        // Inicio de sesión recordado solo en este navegador.
+        document.body.style.overflow='hidden';
+        const iniciar=()=>{login.hidden=true;splash.hidden=true;document.body.style.overflow='';};
+        window.setTimeout(()=>{
+            splash.hidden=true;
+            let autorizado=false;
+            try{autorizado=localStorage.getItem(key)==='autorizado'}catch(e){}
+            if(autorizado)iniciar();
+            else{login.hidden=false;document.getElementById('usuarioAcceso').focus();}
+        },3000);
+        document.getElementById('formAcceso').addEventListener('submit',function(e){
+            e.preventDefault();
+            const u=document.getElementById('usuarioAcceso').value.trim();
+            const c=document.getElementById('claveAcceso').value;
+            if(u.toLocaleLowerCase()==='osmar sport' && c==='1992'){
+                try{localStorage.setItem(key,'autorizado')}catch(e){}
+                iniciar();
+            }else{
+                document.getElementById('errorAcceso').textContent='Usuario o contraseña incorrectos.';
+                document.getElementById('claveAcceso').value='';
+            }
+        });
+    })();
     </script>
 </body>
 </html>
